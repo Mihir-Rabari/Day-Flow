@@ -43,9 +43,21 @@ export class PasswordService {
     password += numbers[Math.floor(Math.random() * numbers.length)];
     password += symbols[Math.floor(Math.random() * symbols.length)];
 
-    // Fill the rest with random characters
+    // Fill the rest with random characters, avoiding consecutive identical characters
     for (let i = 4; i < length; i++) {
-      password += allChars[Math.floor(Math.random() * allChars.length)];
+      let nextChar;
+      let attempts = 0;
+      do {
+        nextChar = allChars[Math.floor(Math.random() * allChars.length)];
+        attempts++;
+        // Prevent infinite loop by allowing after 10 attempts
+        if (attempts > 10) break;
+      } while (
+        password.length >= 2 &&
+        nextChar === password[password.length - 1] &&
+        nextChar === password[password.length - 2]
+      );
+      password += nextChar;
     }
 
     // Shuffle the password using Fisher-Yates algorithm to avoid predictable patterns
@@ -58,7 +70,15 @@ export class PasswordService {
       ];
     }
 
-    return passwordArray.join('');
+    const shuffledPassword = passwordArray.join('');
+
+    // Final check: if the shuffled password has consecutive identical chars, regenerate
+    if (/(.)\1{2,}/.test(shuffledPassword)) {
+      // Recursively try again (with a limit to prevent infinite recursion)
+      return this.generateTemporaryPassword(length);
+    }
+
+    return shuffledPassword;
   }
 
   /**

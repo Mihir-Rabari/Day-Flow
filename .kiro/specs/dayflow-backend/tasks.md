@@ -87,13 +87,13 @@ This implementation plan breaks down the Dayflow backend development into discre
     - **Property 6: Profile Access Permissions**
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 4.1, 4.2, 4.3, 4.4, 4.5**
 
-- [ ] 5. Checkpoint - Core Foundation Complete
+- [x] 5. Checkpoint - Core Foundation Complete
   - Ensure all tests pass, verify database connectivity, confirm authentication works
   - Test employee creation and Login ID generation
   - Ask the user if questions arise about the foundation setup
 
-- [ ] 6. Email Notification System
-  - [ ] 6.1 Set up Nodemailer configuration
+- [-] 6. Email Notification System
+  - [x] 6.1 Set up Nodemailer configuration
     - Configure email service with SMTP settings
     - Create email template system for consistent formatting
     - Add error handling and retry mechanisms

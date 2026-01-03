@@ -10,6 +10,7 @@ import {
 } from '../types';
 import { LoginIdService } from './loginIdService';
 import { PasswordService } from './passwordService';
+import { emailService } from './emailService';
 import { logger } from '../utils/logger';
 
 const prisma = new PrismaClient();
@@ -66,6 +67,28 @@ export class EmployeeService {
         loginId: employee.loginId,
         email: employee.email,
       });
+
+      // Send welcome email asynchronously
+      try {
+        await emailService.sendWelcomeEmail(
+          employee.email,
+          `${employee.firstName} ${employee.lastName}`,
+          employee.loginId,
+          temporaryPassword
+        );
+        logger.info('Welcome email sent successfully', {
+          employeeId: employee.id,
+          email: employee.email,
+        });
+      } catch (emailError) {
+        // Log email error but don't fail employee creation
+        logger.error('Failed to send welcome email', {
+          employeeId: employee.id,
+          email: employee.email,
+          error:
+            emailError instanceof Error ? emailError.message : 'Unknown error',
+        });
+      }
 
       return {
         employee: this.mapPrismaEmployeeToEmployee(employee),

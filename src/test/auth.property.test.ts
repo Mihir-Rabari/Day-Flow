@@ -226,20 +226,21 @@ describe('Authentication System Property Tests', () => {
           }),
           ({ userRole, requiredRoles }) => {
             // Test role hierarchy: Admin > HR_Officer > Employee
-            let shouldHaveAccess = false;
+            // A user should have access only if their role level is sufficient for ALL required roles
 
-            if (userRole === UserRole.ADMIN) {
-              // Admin has access to everything
-              shouldHaveAccess = true;
-            } else if (userRole === UserRole.HR_OFFICER) {
-              // HR Officer has access to HR and Employee roles
-              shouldHaveAccess =
-                requiredRoles.includes(UserRole.HR_OFFICER) ||
-                requiredRoles.includes(UserRole.EMPLOYEE);
-            } else if (userRole === UserRole.EMPLOYEE) {
-              // Employee only has access to Employee role
-              shouldHaveAccess = requiredRoles.includes(UserRole.EMPLOYEE);
-            }
+            // Define role hierarchy levels
+            const roleHierarchy = {
+              [UserRole.EMPLOYEE]: 1,
+              [UserRole.HR_OFFICER]: 2,
+              [UserRole.ADMIN]: 3,
+            };
+
+            const userLevel = roleHierarchy[userRole];
+            const maxRequiredLevel = Math.max(
+              ...requiredRoles.map(role => roleHierarchy[role])
+            );
+
+            const shouldHaveAccess = userLevel >= maxRequiredLevel;
 
             // Verify the access control logic is working correctly
             if (shouldHaveAccess) {

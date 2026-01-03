@@ -6,11 +6,10 @@ import {
   UpdateEmployeeRequest,
   EmployeeFilters,
   UserRole,
-  ApiResponse,
   PaginationOptions,
 } from '../types';
 import { logger } from '../utils/logger';
-import { formatSuccessResponse, formatErrorResponse } from '../utils/response';
+import { ResponseUtil } from '../utils/response';
 
 /**
  * Validation schemas for employee endpoints
@@ -199,14 +198,14 @@ export class EmployeeController {
       });
 
       // Return response with temporary password
-      const response: ApiResponse = formatSuccessResponse({
-        employee: result.employee,
-        temporaryPassword: result.temporaryPassword,
-        message:
-          'Employee created successfully. Please share the temporary password securely.',
-      });
-
-      res.status(201).json(response);
+      ResponseUtil.created(
+        res,
+        {
+          employee: result.employee,
+          temporaryPassword: result.temporaryPassword,
+        },
+        'Employee created successfully. Please share the temporary password securely.'
+      );
     } catch (error) {
       logger.error('Error in createEmployee controller', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -236,17 +235,11 @@ export class EmployeeController {
       );
 
       if (!employee) {
-        const response: ApiResponse = formatErrorResponse(
-          'Employee not found',
-          'EMPLOYEE_NOT_FOUND',
-          404
-        );
-        res.status(404).json(response);
+        ResponseUtil.notFound(res, 'Employee not found', 'EMPLOYEE_NOT_FOUND');
         return;
       }
 
-      const response: ApiResponse = formatSuccessResponse(employee);
-      res.json(response);
+      ResponseUtil.success(res, employee);
     } catch (error) {
       logger.error('Error in getEmployee controller', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -291,8 +284,7 @@ export class EmployeeController {
         updatedBy: requestingUser.userId,
       });
 
-      const response: ApiResponse = formatSuccessResponse(updatedEmployee);
-      res.json(response);
+      ResponseUtil.success(res, updatedEmployee);
     } catch (error) {
       logger.error('Error in updateEmployee controller', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -345,8 +337,7 @@ export class EmployeeController {
         requestingUser.role
       );
 
-      const response: ApiResponse = formatSuccessResponse(result);
-      res.json(response);
+      ResponseUtil.success(res, result);
     } catch (error) {
       logger.error('Error in getEmployees controller', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -375,17 +366,11 @@ export class EmployeeController {
       );
 
       if (!employee) {
-        const response: ApiResponse = formatErrorResponse(
-          'Profile not found',
-          'PROFILE_NOT_FOUND',
-          404
-        );
-        res.status(404).json(response);
+        ResponseUtil.notFound(res, 'Profile not found', 'PROFILE_NOT_FOUND');
         return;
       }
 
-      const response: ApiResponse = formatSuccessResponse(employee);
-      res.json(response);
+      ResponseUtil.success(res, employee);
     } catch (error) {
       logger.error('Error in getCurrentUserProfile controller', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -425,8 +410,7 @@ export class EmployeeController {
         employeeId: requestingUser.userId,
       });
 
-      const response: ApiResponse = formatSuccessResponse(updatedEmployee);
-      res.json(response);
+      ResponseUtil.success(res, updatedEmployee);
     } catch (error) {
       logger.error('Error in updateCurrentUserProfile controller', {
         error: error instanceof Error ? error.message : 'Unknown error',
