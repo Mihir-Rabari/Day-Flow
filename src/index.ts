@@ -10,6 +10,8 @@ import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFoundHandler';
 import employeeRoutes from './routes/employeeRoutes';
 import authRoutes from './routes/authRoutes';
+import attendanceRoutes from './routes/attendanceRoutes';
+import leaveRoutes from './routes/leaveRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -52,6 +54,8 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/leaves', leaveRoutes);
 
 app.get('/api', (req, res) => {
   res.json({

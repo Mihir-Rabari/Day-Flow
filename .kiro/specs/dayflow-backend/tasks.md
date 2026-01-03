@@ -127,37 +127,37 @@ This implementation plan breaks down the Dayflow backend development into discre
     - Test token refresh and password reset functionality
     - _Requirements: 3.1, 3.2, 3.4_
 
-- [ ] 8. Attendance Management System
-  - [ ] 8.1 Create attendance service layer
+- [x] 8. Attendance Management System
+  - [x] 8.1 Create attendance service layer
     - Implement check-in and check-out functionality
     - Add working hours calculation logic
     - Create attendance status determination
     - _Requirements: 5.1, 5.2_
 
-  - [ ] 8.2 Build attendance API controllers
+  - [x] 8.2 Build attendance API controllers
     - Create check-in/check-out endpoints
     - Add attendance retrieval with role-based access
     - Implement attendance reporting for admins
     - _Requirements: 5.3, 5.4, 5.5_
 
-  - [ ] 8.3 Write property tests for attendance system
+  - [x] 8.3 Write property tests for attendance system
     - **Property 7: Attendance Workflow Integrity**
     - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
-- [ ] 9. Leave Management System
-  - [ ] 9.1 Create leave service layer
+- [x] 9. Leave Management System
+  - [x] 9.1 Create leave service layer
     - Implement leave application with validation
     - Add leave balance calculation and tracking
     - Create leave approval/rejection workflow
     - _Requirements: 6.1, 6.2, 6.5_
 
-  - [ ] 9.2 Build leave API controllers
+  - [x] 9.2 Build leave API controllers
     - Create leave application endpoints
     - Add leave approval/rejection endpoints for admins
     - Implement role-based leave data access
     - _Requirements: 6.3, 6.4_
 
-  - [ ] 9.3 Write property tests for leave management
+  - [x] 9.3 Write property tests for leave management
     - **Property 8: Leave Management Workflow**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
 
