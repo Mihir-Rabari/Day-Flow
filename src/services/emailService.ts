@@ -40,7 +40,7 @@ class EmailService {
   private retryDelay = 1000; // 1 second
 
   constructor() {
-    this.transporter = nodemailer.createTransporter({
+    this.transporter = nodemailer.createTransport({
       host: config.email.smtp.host,
       port: config.email.smtp.port,
       secure: config.email.smtp.port === 465, // true for 465, false for other ports

@@ -92,20 +92,20 @@ This implementation plan breaks down the Dayflow backend development into discre
   - Test employee creation and Login ID generation
   - Ask the user if questions arise about the foundation setup
 
-- [-] 6. Email Notification System
+- [x] 6. Email Notification System
   - [x] 6.1 Set up Nodemailer configuration
     - Configure email service with SMTP settings
     - Create email template system for consistent formatting
     - Add error handling and retry mechanisms
     - _Requirements: 8.4, 8.5_
 
-  - [ ] 6.2 Implement email service layer
+  - [x] 6.2 Implement email service layer
     - Create welcome email functionality for new employees
     - Add password reset email functionality
     - Implement leave notification emails
     - _Requirements: 8.1, 8.2, 8.3_
 
-  - [ ] 6.3 Write property tests for email system
+  - [x] 6.3 Write property tests for email system
     - **Property 10: Email Notification System**
     - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
 
