@@ -9,6 +9,7 @@ import { config } from './config/config';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFoundHandler';
 import employeeRoutes from './routes/employeeRoutes';
+import authRoutes from './routes/authRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -49,6 +50,7 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
+app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 
 app.get('/api', (req, res) => {

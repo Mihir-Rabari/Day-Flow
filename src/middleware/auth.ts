@@ -127,6 +127,40 @@ export const loginRateLimit = rateLimit({
 });
 
 /**
+ * Rate limiting for password reset attempts
+ */
+export const passwordResetRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // Limit each IP to 3 password reset attempts per hour
+  message: {
+    success: false,
+    error: {
+      code: 'PASSWORD_RESET_RATE_LIMIT_EXCEEDED',
+      message: 'Too many password reset attempts, please try again later',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Rate limiting for token refresh
+ */
+export const tokenRefreshRateLimit = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 10, // Limit each IP to 10 token refresh attempts per 5 minutes
+  message: {
+    success: false,
+    error: {
+      code: 'TOKEN_REFRESH_RATE_LIMIT_EXCEEDED',
+      message: 'Too many token refresh attempts, please try again later',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
  * Check if user has specific permission for resource
  */
 export const checkResourcePermission = (
