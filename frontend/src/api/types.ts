@@ -129,13 +129,13 @@ export interface ApiRequestOptions {
 
 // Interceptor Types
 export interface RequestInterceptor {
-  onRequest?: (config: any) => any;
-  onRequestError?: (error: any) => Promise<any>;
+  onRequest?: (config: unknown) => unknown;
+  onRequestError?: (error: unknown) => Promise<unknown>;
 }
 
 export interface ResponseInterceptor {
-  onResponse?: (response: any) => any;
-  onResponseError?: (error: any) => Promise<any>;
+  onResponse?: (response: unknown) => unknown;
+  onResponseError?: (error: unknown) => Promise<unknown>;
 }
 
 export interface ApiInterceptors {

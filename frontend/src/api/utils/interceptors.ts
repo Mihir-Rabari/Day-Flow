@@ -34,7 +34,7 @@ export class ApiInterceptors {
   };
 
   // Request error interceptor
-  static requestErrorInterceptor = (error: any): Promise<any> => {
+  static requestErrorInterceptor = (error: unknown): Promise<unknown> => {
     ApiErrorHandler.logError(error, 'Request Interceptor');
     return Promise.reject(error);
   };
@@ -61,8 +61,10 @@ export class ApiInterceptors {
   };
 
   // Response error interceptor
-  static responseErrorInterceptor = (error: any): Promise<any> => {
-    const config = error.config;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static responseErrorInterceptor = (error: any): Promise<unknown> => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config = (error as any).config;
     const duration = Date.now() - (config?.metadata?.startTime || 0);
     
     // Log error response in development

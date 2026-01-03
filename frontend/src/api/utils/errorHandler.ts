@@ -7,7 +7,7 @@ export class ApiErrorHandler {
     return (
       error instanceof Error &&
       'status' in error &&
-      typeof (error as any).status === 'number'
+      typeof (error as { status: unknown }).status === 'number'
     );
   }
 
@@ -15,7 +15,7 @@ export class ApiErrorHandler {
     return (
       error instanceof Error &&
       'field' in error &&
-      typeof (error as any).field === 'string'
+      typeof (error as { field: unknown }).field === 'string'
     );
   }
 
