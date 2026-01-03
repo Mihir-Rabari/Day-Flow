@@ -11,6 +11,7 @@ import {
 import { LoginIdService } from './loginIdService';
 import { PasswordService } from './passwordService';
 import { emailService } from './emailService';
+import { SalaryService } from './salaryService';
 import { logger } from '../utils/logger';
 
 const prisma = new PrismaClient();
@@ -67,6 +68,22 @@ export class EmployeeService {
         loginId: employee.loginId,
         email: employee.email,
       });
+
+      // Generate salary structure for the new employee
+      try {
+        await SalaryService.generateSalaryStructure(employee.id, data.salaryInfo.monthlyWage);
+        logger.info('Salary structure generated for new employee', {
+          employeeId: employee.id,
+          monthlyWage: data.salaryInfo.monthlyWage,
+        });
+      } catch (salaryError) {
+        // Log salary error but don't fail employee creation
+        logger.error('Failed to generate salary structure for new employee', {
+          employeeId: employee.id,
+          monthlyWage: data.salaryInfo.monthlyWage,
+          error: salaryError instanceof Error ? salaryError.message : 'Unknown error',
+        });
+      }
 
       // Send welcome email asynchronously
       try {
@@ -250,6 +267,24 @@ export class EmployeeService {
         where: { id: employeeId },
         data: updateData,
       });
+
+      // Recalculate salary components if monthly wage was updated
+      if (allowedData.salaryInfo?.monthlyWage) {
+        try {
+          await SalaryService.recalculateComponents(employeeId);
+          logger.info('Salary components recalculated after wage update', {
+            employeeId,
+            newMonthlyWage: allowedData.salaryInfo.monthlyWage,
+          });
+        } catch (salaryError) {
+          // Log salary error but don't fail employee update
+          logger.error('Failed to recalculate salary components after wage update', {
+            employeeId,
+            newMonthlyWage: allowedData.salaryInfo.monthlyWage,
+            error: salaryError instanceof Error ? salaryError.message : 'Unknown error',
+          });
+        }
+      }
 
       logger.info('Employee updated successfully', {
         employeeId,

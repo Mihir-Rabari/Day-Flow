@@ -1,126 +1,73 @@
-# Dayflow Frontend
+# Welcome to your Lovable project
 
-A modern React frontend application for the Dayflow Human Resource Management System (HRMS).
+## Project info
 
-## Features
+**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
 
-- **Modern Tech Stack**: Built with Vite + React + TypeScript
-- **Theme System**: Light/dark mode support with CSS Variables
-- **Responsive Design**: Mobile-first approach with CSS Modules
-- **Type Safety**: Full TypeScript support with comprehensive type definitions
-- **Testing**: Unit tests with Vitest and property-based testing with fast-check
-- **Code Quality**: ESLint, Prettier, and Husky for consistent code style
+## How can I edit this code?
 
-## Project Structure
+There are several ways of editing your application.
 
-```
-src/
-├── components/     # Reusable UI components
-├── contexts/       # React context providers
-├── hooks/          # Custom React hooks
-├── styles/         # Global styles and CSS variables
-├── types/          # TypeScript type definitions
-├── utils/          # Utility functions
-└── test/           # Test setup and utilities
-```
+**Use Lovable**
 
-## Getting Started
+Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
 
-### Prerequisites
+Changes made via Lovable will be committed automatically to this repo.
 
-- Node.js 18+ 
-- npm or yarn
+**Use your preferred IDE**
 
-### Installation
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
-```bash
-# Install dependencies
-npm install
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-# Start development server
+Follow these steps:
+
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
+
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
+
+# Step 3: Install the necessary dependencies.
+npm i
+
+# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
-
-# Run tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
 ```
 
-### Project Setup Status
+**Edit a file directly in GitHub**
 
-✅ **Task 1 Complete**: Project Setup and Core Infrastructure
-- Vite + React + TypeScript configured
-- ESLint, Prettier, and Husky set up
-- CSS Modules and CSS Variables configured
-- All required dependencies installed (React Router, Axios, fast-check, Vitest)
-- Basic project structure created with all necessary folders
-- Tests passing and build working correctly
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
 
-### Development Scripts
+**Use GitHub Codespaces**
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run test` - Run tests once
-- `npm run test:watch` - Run tests in watch mode
-- `npm run test:ui` - Run tests with UI
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint errors
-- `npm run format` - Format code with Prettier
-- `npm run format:check` - Check code formatting
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## Theme System
+## What technologies are used for this project?
 
-The application uses CSS Variables for theming, supporting both light and dark modes:
+This project is built with:
 
-- **Light Theme**: Default theme with orange brand color (#ff6b35)
-- **Dark Theme**: Dark background with consistent brand colors
-- **CSS Variables**: Centralized color, spacing, and typography tokens
-- **Responsive**: Adapts to different screen sizes
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
 
-## Testing Strategy
+## How can I deploy this project?
 
-- **Unit Tests**: Component and utility function testing with Vitest
-- **Property-Based Tests**: Universal correctness properties with fast-check
-- **Integration Tests**: Critical user flow testing
-- **Coverage**: Minimum 80% code coverage target
+Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
 
-## Code Quality
+## Can I connect a custom domain to my Lovable project?
 
-- **ESLint**: Configured with React and TypeScript rules
-- **Prettier**: Consistent code formatting
-- **Husky**: Pre-commit hooks for code quality
-- **TypeScript**: Strict type checking enabled
+Yes, you can!
 
-## API Integration
+To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
-The frontend uses an abstraction layer (`api.ts`) that supports:
-
-- **Mock Implementation**: For development and testing
-- **Production API**: Easy switching to real backend
-- **Type Safety**: Full TypeScript support for API responses
-- **Error Handling**: Consistent error handling across the application
-
-## Contributing
-
-1. Follow the established code style (ESLint + Prettier)
-2. Write tests for new functionality
-3. Update type definitions as needed
-4. Ensure all tests pass before committing
-
-## Architecture
-
-The application follows a component-based architecture with:
-
-- **Context API**: For global state management
-- **Custom Hooks**: For reusable logic
-- **TypeScript**: For type safety and better developer experience
-- **CSS Modules**: For component-scoped styling
-- **Vite**: For fast development and optimized builds
+Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)

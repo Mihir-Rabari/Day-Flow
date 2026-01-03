@@ -303,3 +303,91 @@ export interface LeaveReport {
   unpaidLeavesTaken: number;
   pendingRequests: number;
 }
+
+// Salary related types
+export enum ComponentType {
+  BASIC = 'BASIC',
+  HRA = 'HRA',
+  STANDARD_ALLOWANCE = 'STANDARD_ALLOWANCE',
+  PERFORMANCE_BONUS = 'PERFORMANCE_BONUS',
+  LTA = 'LTA',
+  FIXED_ALLOWANCE = 'FIXED_ALLOWANCE',
+  PF_DEDUCTION = 'PF_DEDUCTION',
+  PROFESSIONAL_TAX = 'PROFESSIONAL_TAX',
+}
+
+export enum ComputationType {
+  FIXED_AMOUNT = 'FIXED_AMOUNT',
+  PERCENTAGE_OF_WAGE = 'PERCENTAGE_OF_WAGE',
+  PERCENTAGE_OF_BASIC = 'PERCENTAGE_OF_BASIC',
+}
+
+export interface SalaryComponent {
+  id: string;
+  employeeId: string;
+  name: ComponentType;
+  displayName: string;
+  computationType: ComputationType;
+  value: number; // percentage or fixed amount
+  calculatedAmount: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SalaryCalculation {
+  basicSalary: number;
+  allowances: Allowance[];
+  deductions: Deduction[];
+  grossSalary: number;
+  netSalary: number;
+  totalAllowances: number;
+  totalDeductions: number;
+}
+
+export interface Allowance {
+  name: ComponentType;
+  displayName: string;
+  amount: number;
+  computationType: ComputationType;
+  value: number;
+}
+
+export interface Deduction {
+  name: ComponentType;
+  displayName: string;
+  amount: number;
+  computationType: ComputationType;
+  value: number;
+}
+
+export interface SalaryStructure {
+  monthlyWage: number;
+  components: SalaryComponentInput[];
+}
+
+export interface SalaryComponentInput {
+  name: ComponentType;
+  displayName: string;
+  computationType: ComputationType;
+  value: number;
+  isActive?: boolean;
+}
+
+export interface UpdateSalaryStructureRequest {
+  monthlyWage?: number;
+  components?: SalaryComponentInput[];
+}
+
+export interface Payslip {
+  employeeId: string;
+  employeeName: string;
+  loginId: string;
+  department: string;
+  position: string;
+  month: number;
+  year: number;
+  monthlyWage: number;
+  salaryCalculation: SalaryCalculation;
+  generatedDate: Date;
+}

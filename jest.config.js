@@ -18,4 +18,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(uuid)/)'
+  ],
 };

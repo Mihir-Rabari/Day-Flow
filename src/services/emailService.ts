@@ -62,7 +62,10 @@ class EmailService {
       await this.transporter.verify();
       logger.info('Email service connection verified successfully');
     } catch (error) {
-      logger.error('Email service connection failed:', error);
+      logger.error('Email service connection failed', {
+        error: (error as Error).message,
+        stack: (error as Error).stack,
+      });
     }
   }
 
@@ -85,7 +88,13 @@ class EmailService {
         subject: emailOptions.subject,
       });
     } catch (error) {
-      logger.error(`Email sending failed (attempt ${retryCount + 1}):`, error);
+      logger.error(`Email sending failed (attempt ${retryCount + 1})`, {
+        error: (error as Error).message,
+        stack: (error as Error).stack,
+        attempt: retryCount + 1,
+        to: emailOptions.to,
+        subject: emailOptions.subject,
+      });
 
       if (retryCount < this.maxRetries) {
         logger.info(`Retrying email send in ${this.retryDelay}ms...`);
@@ -410,7 +419,12 @@ class EmailService {
         employeeName,
       });
     } catch (error) {
-      logger.error(`Failed to send welcome email to ${employeeEmail}:`, error);
+      logger.error(`Failed to send welcome email to ${employeeEmail}`, {
+        error: (error as Error).message,
+        stack: (error as Error).stack,
+        employeeEmail,
+        employeeName,
+      });
       throw new Error(
         `Failed to send welcome email: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -445,8 +459,12 @@ class EmailService {
       );
     } catch (error) {
       logger.error(
-        `Failed to send password reset email to ${employeeEmail}:`,
-        error
+        `Failed to send password reset email to ${employeeEmail}`, {
+          error: (error as Error).message,
+          stack: (error as Error).stack,
+          employeeEmail,
+          employeeName,
+        }
       );
       throw new Error(
         `Failed to send password reset email: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -491,8 +509,14 @@ class EmailService {
       );
     } catch (error) {
       logger.error(
-        `Failed to send leave notification email to ${employeeEmail}:`,
-        error
+        `Failed to send leave notification email to ${employeeEmail}`, {
+          error: (error as Error).message,
+          stack: (error as Error).stack,
+          employeeEmail,
+          employeeName,
+          leaveType,
+          status,
+        }
       );
       throw new Error(
         `Failed to send leave notification email: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -506,7 +530,10 @@ class EmailService {
       await this.verifyConnection();
       return true;
     } catch (error) {
-      logger.error('Email configuration test failed:', error);
+      logger.error('Email configuration test failed', {
+        error: (error as Error).message,
+        stack: (error as Error).stack,
+      });
       return false;
     }
   }
