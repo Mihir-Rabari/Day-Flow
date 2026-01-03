@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
 import os from 'os';

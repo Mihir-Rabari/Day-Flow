@@ -72,7 +72,7 @@ export class SalaryService {
    * Calculate deductions based on basic salary
    * PF 12% of basic, Professional Tax ₹200
    */
-  static calculateDeductions(basicSalary: number): SalaryComponentInput[] {
+  static calculateDeductions(_basicSalary: number): SalaryComponentInput[] {
     return [
       {
         name: ComponentType.PF_DEDUCTION,
@@ -121,6 +121,7 @@ export class SalaryService {
     const basicSalary = this.calculateComponentAmount(basicComponent, monthlyWage, 0);
     
     let totalAllowances = 0;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let totalDeductions = 0;
 
     for (const component of components) {
