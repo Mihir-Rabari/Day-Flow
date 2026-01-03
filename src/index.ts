@@ -6,16 +6,25 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 
 import { config } from './config/config';
-import { errorHandler, handleUnhandledRejection, handleUncaughtException } from './middleware/errorHandler';
+import {
+  errorHandler,
+  handleUnhandledRejection,
+  handleUncaughtException,
+} from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFoundHandler';
 import { requestLogger } from './middleware/requestLogger';
-import { monitoringMiddleware, healthCheckHandler, startHealthMonitoring } from './middleware/monitoring';
+import {
+  monitoringMiddleware,
+  healthCheckHandler,
+  startHealthMonitoring,
+} from './middleware/monitoring';
 import { logger } from './utils/logger';
 import employeeRoutes from './routes/employeeRoutes';
 import authRoutes from './routes/authRoutes';
 import attendanceRoutes from './routes/attendanceRoutes';
 import leaveRoutes from './routes/leaveRoutes';
 import salaryRoutes from './routes/salaryRoutes';
+import backupRoutes from './routes/backupRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -79,6 +88,7 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/salary', salaryRoutes);
+app.use('/api/backup', backupRoutes);
 
 app.get('/api', (req, res) => {
   res.json({

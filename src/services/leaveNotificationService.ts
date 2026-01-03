@@ -1,8 +1,7 @@
-import { PrismaClient, LeaveStatus, LeaveType } from '@prisma/client';
+import { LeaveStatus, LeaveType } from '@prisma/client';
+import { prisma } from '../database/client';
 import { emailService } from './emailService';
 import { logger } from '../utils/logger';
-
-const prisma = new PrismaClient();
 
 export class LeaveNotificationService {
   /**

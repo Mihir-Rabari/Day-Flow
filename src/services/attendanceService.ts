@@ -1,7 +1,5 @@
-import {
-  PrismaClient,
-  AttendanceStatus as PrismaAttendanceStatus,
-} from '@prisma/client';
+import { AttendanceStatus as PrismaAttendanceStatus } from '@prisma/client';
+import { prisma } from '../database/client';
 import {
   AttendanceRecord,
   AttendanceFilters,
@@ -14,8 +12,6 @@ import {
   PaginationOptions,
 } from '../types';
 import { logger } from '../utils/logger';
-
-const prisma = new PrismaClient();
 
 export class AttendanceService {
   /**

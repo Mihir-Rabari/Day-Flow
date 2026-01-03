@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../database/client';
 import Joi from 'joi';
 import { TokenService } from '../services/tokenService';
 import { PasswordService } from '../services/passwordService';
@@ -10,8 +10,6 @@ import {
   AuthenticationError,
   ValidationError,
 } from '../middleware/errorHandler';
-
-const prisma = new PrismaClient();
 
 /**
  * Validation schemas for authentication endpoints

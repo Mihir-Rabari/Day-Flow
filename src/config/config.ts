@@ -9,6 +9,9 @@ export const config = {
   },
   database: {
     url: process.env.DATABASE_URL || '',
+    connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '20', 10),
+    poolTimeout: parseInt(process.env.DB_POOL_TIMEOUT || '20', 10),
+    maxIdleTime: parseInt(process.env.DB_MAX_IDLE_TIME || '300', 10), // 5 minutes
   },
   jwt: {
     secret: process.env.JWT_SECRET || 'fallback-secret',
@@ -41,5 +44,11 @@ export const config = {
   },
   cors: {
     origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
+  },
+  performance: {
+    maxPageSize: parseInt(process.env.MAX_PAGE_SIZE || '100', 10),
+    defaultPageSize: parseInt(process.env.DEFAULT_PAGE_SIZE || '10', 10),
+    queryTimeout: parseInt(process.env.QUERY_TIMEOUT || '30000', 10), // 30 seconds
+    enableQueryOptimization: process.env.ENABLE_QUERY_OPTIMIZATION === 'true',
   },
 };

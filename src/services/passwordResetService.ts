@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../database/client';
 import { PasswordService } from './passwordService';
 import { emailService } from './emailService';
 import { logger } from '../utils/logger';
-
-const prisma = new PrismaClient();
 
 interface PasswordResetToken {
   id: string;

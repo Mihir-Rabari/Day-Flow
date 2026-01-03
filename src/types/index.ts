@@ -1,3 +1,5 @@
+import { ComponentType, ComputationType } from '@prisma/client';
+
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -304,23 +306,8 @@ export interface LeaveReport {
   pendingRequests: number;
 }
 
-// Salary related types
-export enum ComponentType {
-  BASIC = 'BASIC',
-  HRA = 'HRA',
-  STANDARD_ALLOWANCE = 'STANDARD_ALLOWANCE',
-  PERFORMANCE_BONUS = 'PERFORMANCE_BONUS',
-  LTA = 'LTA',
-  FIXED_ALLOWANCE = 'FIXED_ALLOWANCE',
-  PF_DEDUCTION = 'PF_DEDUCTION',
-  PROFESSIONAL_TAX = 'PROFESSIONAL_TAX',
-}
-
-export enum ComputationType {
-  FIXED_AMOUNT = 'FIXED_AMOUNT',
-  PERCENTAGE_OF_WAGE = 'PERCENTAGE_OF_WAGE',
-  PERCENTAGE_OF_BASIC = 'PERCENTAGE_OF_BASIC',
-}
+// Re-export Prisma enums for consistency
+export { ComponentType, ComputationType } from '@prisma/client';
 
 export interface SalaryComponent {
   id: string;

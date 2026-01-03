@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../database/client';
 import { logger } from '../utils/logger';
-
-const prisma = new PrismaClient();
 
 export class LoginIdService {
   /**

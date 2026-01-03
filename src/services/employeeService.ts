@@ -1,4 +1,5 @@
-import { PrismaClient, UserRole as PrismaUserRole } from '@prisma/client';
+import { UserRole as PrismaUserRole } from '@prisma/client';
+import { prisma } from '../database/client';
 import {
   CreateEmployeeRequest,
   UpdateEmployeeRequest,
@@ -12,9 +13,9 @@ import { LoginIdService } from './loginIdService';
 import { PasswordService } from './passwordService';
 import { emailService } from './emailService';
 import { SalaryService } from './salaryService';
+import { PaginationService } from './paginationService';
+import { TransactionService } from './transactionService';
 import { logger } from '../utils/logger';
-
-const prisma = new PrismaClient();
 
 export class EmployeeService {
   /**
@@ -41,74 +42,70 @@ export class EmployeeService {
       const passwordHash =
         await PasswordService.hashPassword(temporaryPassword);
 
-      // Create employee in database
-      const employee = await prisma.employee.create({
-        data: {
-          loginId,
-          email: data.email.toLowerCase().trim(),
-          passwordHash,
-          firstName: data.firstName.trim(),
-          lastName: data.lastName.trim(),
-          role: this.mapUserRoleToPrisma(data.role || UserRole.EMPLOYEE),
-          phone: data.personalDetails.phone?.trim(),
-          address: data.personalDetails.address?.trim(),
-          dateOfBirth: data.personalDetails.dateOfBirth,
-          emergencyContact: data.personalDetails.emergencyContact,
-          department: data.jobDetails.department.trim(),
-          position: data.jobDetails.position.trim(),
-          joiningDate: new Date(data.jobDetails.joiningDate),
-          reportingManager: data.jobDetails.reportingManager?.trim(),
-          workingSchedule: data.jobDetails.workingSchedule,
-          monthlyWage: data.salaryInfo.monthlyWage,
-        },
-      });
+      // Execute employee creation in a transaction to ensure data consistency
+      const result = await TransactionService.executeTransaction(async tx => {
+        // Create employee in database
+        const employee = await tx.employee.create({
+          data: {
+            loginId,
+            email: data.email.toLowerCase().trim(),
+            passwordHash,
+            firstName: data.firstName.trim(),
+            lastName: data.lastName.trim(),
+            role: this.mapUserRoleToPrisma(data.role || UserRole.EMPLOYEE),
+            phone: data.personalDetails.phone?.trim(),
+            address: data.personalDetails.address?.trim(),
+            dateOfBirth: data.personalDetails.dateOfBirth,
+            emergencyContact: data.personalDetails.emergencyContact,
+            department: data.jobDetails.department.trim(),
+            position: data.jobDetails.position.trim(),
+            joiningDate: new Date(data.jobDetails.joiningDate),
+            reportingManager: data.jobDetails.reportingManager?.trim(),
+            workingSchedule: data.jobDetails.workingSchedule,
+            monthlyWage: data.salaryInfo.monthlyWage,
+          },
+        });
+
+        // Generate salary structure within the same transaction
+        await SalaryService.generateSalaryStructureInTransaction(
+          tx,
+          employee.id,
+          data.salaryInfo.monthlyWage
+        );
+
+        return employee;
+      }, 'createEmployee');
 
       logger.info('Employee created successfully', {
-        employeeId: employee.id,
-        loginId: employee.loginId,
-        email: employee.email,
+        employeeId: result.id,
+        loginId: result.loginId,
+        email: result.email,
       });
 
-      // Generate salary structure for the new employee
-      try {
-        await SalaryService.generateSalaryStructure(employee.id, data.salaryInfo.monthlyWage);
-        logger.info('Salary structure generated for new employee', {
-          employeeId: employee.id,
-          monthlyWage: data.salaryInfo.monthlyWage,
-        });
-      } catch (salaryError) {
-        // Log salary error but don't fail employee creation
-        logger.error('Failed to generate salary structure for new employee', {
-          employeeId: employee.id,
-          monthlyWage: data.salaryInfo.monthlyWage,
-          error: salaryError instanceof Error ? salaryError.message : 'Unknown error',
-        });
-      }
-
-      // Send welcome email asynchronously
+      // Send welcome email asynchronously (outside transaction)
       try {
         await emailService.sendWelcomeEmail(
-          employee.email,
-          `${employee.firstName} ${employee.lastName}`,
-          employee.loginId,
+          result.email,
+          `${result.firstName} ${result.lastName}`,
+          result.loginId,
           temporaryPassword
         );
         logger.info('Welcome email sent successfully', {
-          employeeId: employee.id,
-          email: employee.email,
+          employeeId: result.id,
+          email: result.email,
         });
       } catch (emailError) {
         // Log email error but don't fail employee creation
         logger.error('Failed to send welcome email', {
-          employeeId: employee.id,
-          email: employee.email,
+          employeeId: result.id,
+          email: result.email,
           error:
             emailError instanceof Error ? emailError.message : 'Unknown error',
         });
       }
 
       return {
-        employee: this.mapPrismaEmployeeToEmployee(employee),
+        employee: this.mapPrismaEmployeeToEmployee(result),
         temporaryPassword,
       };
     } catch (error) {
@@ -278,11 +275,17 @@ export class EmployeeService {
           });
         } catch (salaryError) {
           // Log salary error but don't fail employee update
-          logger.error('Failed to recalculate salary components after wage update', {
-            employeeId,
-            newMonthlyWage: allowedData.salaryInfo.monthlyWage,
-            error: salaryError instanceof Error ? salaryError.message : 'Unknown error',
-          });
+          logger.error(
+            'Failed to recalculate salary components after wage update',
+            {
+              employeeId,
+              newMonthlyWage: allowedData.salaryInfo.monthlyWage,
+              error:
+                salaryError instanceof Error
+                  ? salaryError.message
+                  : 'Unknown error',
+            }
+          );
         }
       }
 
@@ -358,34 +361,20 @@ export class EmployeeService {
         ];
       }
 
-      // Calculate pagination
-      const skip = (pagination.page - 1) * pagination.limit;
+      // Use enhanced pagination service for better performance
+      const result = await PaginationService.paginate(
+        prisma.employee,
+        pagination,
+        where
+      );
 
-      // Execute queries
-      const [employees, total] = await Promise.all([
-        prisma.employee.findMany({
-          where,
-          skip,
-          take: pagination.limit,
-          orderBy: {
-            [pagination.sortBy || 'createdAt']: pagination.sortOrder || 'desc',
-          },
-        }),
-        prisma.employee.count({ where }),
-      ]);
-
-      const mappedEmployees = employees.map(emp =>
+      const mappedEmployees = result.data.map(emp =>
         this.mapPrismaEmployeeToEmployee(emp)
       );
 
       return {
         data: mappedEmployees,
-        pagination: {
-          page: pagination.page,
-          limit: pagination.limit,
-          total,
-          totalPages: Math.ceil(total / pagination.limit),
-        },
+        pagination: result.pagination,
       };
     } catch (error) {
       logger.error('Error retrieving employees', {

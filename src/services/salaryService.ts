@@ -1,33 +1,50 @@
-import { PrismaClient, ComponentType, ComputationType } from '@prisma/client';
+import { ComponentType, ComputationType } from '@prisma/client';
+import { prisma } from '../database/client';
 import {
   SalaryCalculation,
   SalaryComponent,
-  SalaryComponentInput,
   UpdateSalaryStructureRequest,
   Payslip,
   Allowance,
   Deduction,
 } from '../types';
+import { TransactionService } from './transactionService';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+// Type for the transaction client
+type TransactionClient = Omit<
+  import('@prisma/client').PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
+
+// Internal type for salary component input using Prisma enums
+interface SalaryComponentInput {
+  name: ComponentType;
+  displayName: string;
+  computationType: ComputationType;
+  value: number;
+  isActive?: boolean;
+}
 
 export class SalaryService {
   /**
    * Calculate salary components based on monthly wage
    * According to requirements: Basic 50%, HRA 50% of Basic, etc.
    */
-  static calculateSalaryComponents(monthlyWage: number): SalaryComponentInput[] {
+  static calculateSalaryComponents(
+    monthlyWage: number
+  ): SalaryComponentInput[] {
     const basic = monthlyWage * 0.5; // 50% of wage
     const hra = basic * 0.5; // 50% of basic
     const standardAllowance = 4167; // Fixed amount
     const performanceBonus = monthlyWage * 0.0833; // 8.33% of wage
     const lta = monthlyWage * 0.08333; // 8.333% of wage
-    
+
     // Calculate fixed allowance as remainder
-    const totalCalculatedAllowances = basic + hra + standardAllowance + performanceBonus + lta;
+    const totalCalculatedAllowances =
+      basic + hra + standardAllowance + performanceBonus + lta;
     const fixedAllowance = Math.max(0, monthlyWage - totalCalculatedAllowances);
-    
+
     return [
       {
         name: ComponentType.BASIC,
@@ -112,29 +129,36 @@ export class SalaryService {
   /**
    * Validate that total salary components don't exceed wage
    */
-  static validateSalaryStructure(monthlyWage: number, components: SalaryComponentInput[]): boolean {
+  static validateSalaryStructure(
+    monthlyWage: number,
+    components: SalaryComponentInput[]
+  ): boolean {
     const basicComponent = components.find(c => c.name === ComponentType.BASIC);
     if (!basicComponent) {
       throw new Error('Basic salary component is required');
     }
 
-    const basicSalary = this.calculateComponentAmount(basicComponent, monthlyWage, 0);
-    
+    const basicSalary = this.calculateComponentAmount(
+      basicComponent,
+      monthlyWage,
+      0
+    );
+
     let totalAllowances = 0;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    let totalDeductions = 0;
 
     for (const component of components) {
-      const amount = this.calculateComponentAmount(component, monthlyWage, basicSalary);
-      
-      if (this.isDeduction(component.name)) {
-        totalDeductions += amount;
-      } else {
+      const amount = this.calculateComponentAmount(
+        component,
+        monthlyWage,
+        basicSalary
+      );
+
+      if (!this.isDeduction(component.name)) {
         totalAllowances += amount;
       }
     }
 
-    // Allowances should not exceed wage, deductions are subtracted from gross
+    // Allowances should not exceed wage
     return totalAllowances <= monthlyWage;
   }
 
@@ -142,34 +166,48 @@ export class SalaryService {
    * Check if a component type is a deduction
    */
   static isDeduction(componentType: ComponentType): boolean {
-    return [ComponentType.PF_DEDUCTION, ComponentType.PROFESSIONAL_TAX].includes(componentType);
+    const deductionTypes: ComponentType[] = [
+      ComponentType.PF_DEDUCTION,
+      ComponentType.PROFESSIONAL_TAX,
+    ];
+    return deductionTypes.includes(componentType);
   }
 
   /**
-   * Generate complete salary structure for an employee
+   * Generate complete salary structure for an employee within a transaction
    */
-  static async generateSalaryStructure(employeeId: string, monthlyWage: number): Promise<void> {
+  static async generateSalaryStructureInTransaction(
+    tx: TransactionClient,
+    employeeId: string,
+    monthlyWage: number
+  ): Promise<void> {
     try {
       // Calculate allowance components
       const allowanceComponents = this.calculateSalaryComponents(monthlyWage);
-      
+
       // Calculate basic salary for deductions
-      const basicComponent = allowanceComponents.find(c => c.name === ComponentType.BASIC);
-      const basicSalary = basicComponent ? this.calculateComponentAmount(basicComponent, monthlyWage, 0) : 0;
-      
+      const basicComponent = allowanceComponents.find(
+        c => c.name === ComponentType.BASIC
+      );
+      const basicSalary = basicComponent
+        ? this.calculateComponentAmount(basicComponent, monthlyWage, 0)
+        : 0;
+
       // Calculate deduction components
       const deductionComponents = this.calculateDeductions(basicSalary);
-      
+
       // Combine all components
       const allComponents = [...allowanceComponents, ...deductionComponents];
 
       // Validate structure
       if (!this.validateSalaryStructure(monthlyWage, allComponents)) {
-        throw new Error('Invalid salary structure: components exceed monthly wage');
+        throw new Error(
+          'Invalid salary structure: components exceed monthly wage'
+        );
       }
 
       // Delete existing components for this employee
-      await prisma.salaryComponent.deleteMany({
+      await tx.salaryComponent.deleteMany({
         where: { employeeId },
       });
 
@@ -180,23 +218,50 @@ export class SalaryService {
         displayName: component.displayName,
         computationType: component.computationType,
         value: component.value,
-        calculatedAmount: this.calculateComponentAmount(component, monthlyWage, basicSalary),
+        calculatedAmount: this.calculateComponentAmount(
+          component,
+          monthlyWage,
+          basicSalary
+        ),
         isActive: component.isActive ?? true,
       }));
 
-      await prisma.salaryComponent.createMany({
+      await tx.salaryComponent.createMany({
         data: componentsToCreate,
       });
 
-      logger.info(`Salary structure generated for employee ${employeeId}`, {
+      logger.info(
+        `Salary structure generated for employee ${employeeId} in transaction`,
+        {
+          employeeId,
+          monthlyWage,
+          componentsCount: allComponents.length,
+        }
+      );
+    } catch (error) {
+      logger.error('Error generating salary structure in transaction', {
         employeeId,
         monthlyWage,
-        componentsCount: allComponents.length,
+        error,
       });
-    } catch (error) {
-      logger.error('Error generating salary structure', { employeeId, monthlyWage, error });
       throw error;
     }
+  }
+
+  /**
+   * Generate complete salary structure for an employee
+   */
+  static async generateSalaryStructure(
+    employeeId: string,
+    monthlyWage: number
+  ): Promise<void> {
+    return TransactionService.executeTransaction(async tx => {
+      await this.generateSalaryStructureInTransaction(
+        tx,
+        employeeId,
+        monthlyWage
+      );
+    }, 'generateSalaryStructure');
   }
 
   /**
@@ -215,18 +280,21 @@ export class SalaryService {
 
       // If no salary components exist, generate them
       if (employee.salaryComponents.length === 0) {
-        await this.generateSalaryStructure(employeeId, Number(employee.monthlyWage));
-        
+        await this.generateSalaryStructure(
+          employeeId,
+          Number(employee.monthlyWage)
+        );
+
         // Refetch employee with components
         const updatedEmployee = await prisma.employee.findUnique({
           where: { id: employeeId },
           include: { salaryComponents: true },
         });
-        
+
         if (!updatedEmployee) {
           throw new Error('Employee not found after salary generation');
         }
-        
+
         employee.salaryComponents = updatedEmployee.salaryComponents;
       }
 
@@ -235,7 +303,9 @@ export class SalaryService {
       let basicSalary = 0;
 
       // Process each component
-      for (const component of employee.salaryComponents.filter(c => c.isActive)) {
+      for (const component of employee.salaryComponents.filter(
+        c => c.isActive
+      )) {
         const componentData = {
           name: component.name as ComponentType,
           displayName: component.displayName,
@@ -255,8 +325,14 @@ export class SalaryService {
         }
       }
 
-      const totalAllowances = allowances.reduce((sum, allowance) => sum + allowance.amount, 0);
-      const totalDeductions = deductions.reduce((sum, deduction) => sum + deduction.amount, 0);
+      const totalAllowances = allowances.reduce(
+        (sum, allowance) => sum + allowance.amount,
+        0
+      );
+      const totalDeductions = deductions.reduce(
+        (sum, deduction) => sum + deduction.amount,
+        0
+      );
       const grossSalary = totalAllowances;
       const netSalary = grossSalary - totalDeductions;
 
@@ -282,8 +358,8 @@ export class SalaryService {
     employeeId: string,
     updateData: UpdateSalaryStructureRequest
   ): Promise<SalaryComponent[]> {
-    try {
-      const employee = await prisma.employee.findUnique({
+    return TransactionService.executeTransaction(async tx => {
+      const employee = await tx.employee.findUnique({
         where: { id: employeeId },
       });
 
@@ -296,8 +372,8 @@ export class SalaryService {
       // Update monthly wage if provided
       if (updateData.monthlyWage !== undefined) {
         monthlyWage = updateData.monthlyWage;
-        
-        await prisma.employee.update({
+
+        await tx.employee.update({
           where: { id: employeeId },
           data: { monthlyWage: updateData.monthlyWage },
         });
@@ -307,15 +383,21 @@ export class SalaryService {
       if (updateData.components) {
         // Validate the provided structure
         if (!this.validateSalaryStructure(monthlyWage, updateData.components)) {
-          throw new Error('Invalid salary structure: components exceed monthly wage');
+          throw new Error(
+            'Invalid salary structure: components exceed monthly wage'
+          );
         }
 
         // Calculate basic salary for deductions
-        const basicComponent = updateData.components.find(c => c.name === ComponentType.BASIC);
-        const basicSalary = basicComponent ? this.calculateComponentAmount(basicComponent, monthlyWage, 0) : 0;
+        const basicComponent = updateData.components.find(
+          c => c.name === ComponentType.BASIC
+        );
+        const basicSalary = basicComponent
+          ? this.calculateComponentAmount(basicComponent, monthlyWage, 0)
+          : 0;
 
         // Delete existing components
-        await prisma.salaryComponent.deleteMany({
+        await tx.salaryComponent.deleteMany({
           where: { employeeId },
         });
 
@@ -326,20 +408,28 @@ export class SalaryService {
           displayName: component.displayName,
           computationType: component.computationType,
           value: component.value,
-          calculatedAmount: this.calculateComponentAmount(component, monthlyWage, basicSalary),
+          calculatedAmount: this.calculateComponentAmount(
+            component,
+            monthlyWage,
+            basicSalary
+          ),
           isActive: component.isActive ?? true,
         }));
 
-        await prisma.salaryComponent.createMany({
+        await tx.salaryComponent.createMany({
           data: componentsToCreate,
         });
       } else {
         // Regenerate default structure with new wage
-        await this.generateSalaryStructure(employeeId, monthlyWage);
+        await this.generateSalaryStructureInTransaction(
+          tx,
+          employeeId,
+          monthlyWage
+        );
       }
 
       // Return updated components
-      const updatedComponents = await prisma.salaryComponent.findMany({
+      const updatedComponents = await tx.salaryComponent.findMany({
         where: { employeeId },
         orderBy: { name: 'asc' },
       });
@@ -350,7 +440,7 @@ export class SalaryService {
         componentsCount: updatedComponents.length,
       });
 
-      return updatedComponents.map(component => ({
+      return updatedComponents.map((component: any) => ({
         id: component.id,
         employeeId: component.employeeId,
         name: component.name as ComponentType,
@@ -362,16 +452,17 @@ export class SalaryService {
         createdAt: component.createdAt,
         updatedAt: component.updatedAt,
       }));
-    } catch (error) {
-      logger.error('Error updating salary structure', { employeeId, updateData, error });
-      throw error;
-    }
+    }, 'updateSalaryStructure');
   }
 
   /**
    * Generate payslip for an employee for a specific month/year
    */
-  static async generatePayslip(employeeId: string, month: number, year: number): Promise<Payslip> {
+  static async generatePayslip(
+    employeeId: string,
+    month: number,
+    year: number
+  ): Promise<Payslip> {
     try {
       const employee = await prisma.employee.findUnique({
         where: { id: employeeId },
@@ -396,7 +487,12 @@ export class SalaryService {
         generatedDate: new Date(),
       };
     } catch (error) {
-      logger.error('Error generating payslip', { employeeId, month, year, error });
+      logger.error('Error generating payslip', {
+        employeeId,
+        month,
+        year,
+        error,
+      });
       throw error;
     }
   }
@@ -404,7 +500,9 @@ export class SalaryService {
   /**
    * Get all salary components for an employee
    */
-  static async getSalaryComponents(employeeId: string): Promise<SalaryComponent[]> {
+  static async getSalaryComponents(
+    employeeId: string
+  ): Promise<SalaryComponent[]> {
     try {
       const components = await prisma.salaryComponent.findMany({
         where: { employeeId },
@@ -433,8 +531,8 @@ export class SalaryService {
    * Recalculate all salary components when wage changes
    */
   static async recalculateComponents(employeeId: string): Promise<void> {
-    try {
-      const employee = await prisma.employee.findUnique({
+    return TransactionService.executeTransaction(async tx => {
+      const employee = await tx.employee.findUnique({
         where: { id: employeeId },
         include: { salaryComponents: true },
       });
@@ -444,16 +542,24 @@ export class SalaryService {
       }
 
       const monthlyWage = Number(employee.monthlyWage);
-      
+
       // Get basic salary for deduction calculations
-      const basicComponent = employee.salaryComponents.find(c => c.name === ComponentType.BASIC);
-      const basicSalary = basicComponent ? 
-        this.calculateComponentAmount({
-          name: basicComponent.name as ComponentType,
-          displayName: basicComponent.displayName,
-          computationType: basicComponent.computationType as ComputationType,
-          value: Number(basicComponent.value),
-        }, monthlyWage, 0) : 0;
+      const basicComponent = employee.salaryComponents.find(
+        c => c.name === ComponentType.BASIC
+      );
+      const basicSalary = basicComponent
+        ? this.calculateComponentAmount(
+            {
+              name: basicComponent.name as ComponentType,
+              displayName: basicComponent.displayName,
+              computationType:
+                basicComponent.computationType as ComputationType,
+              value: Number(basicComponent.value),
+            },
+            monthlyWage,
+            0
+          )
+        : 0;
 
       // Recalculate each component
       for (const component of employee.salaryComponents) {
@@ -464,9 +570,13 @@ export class SalaryService {
           value: Number(component.value),
         };
 
-        const newAmount = this.calculateComponentAmount(componentInput, monthlyWage, basicSalary);
+        const newAmount = this.calculateComponentAmount(
+          componentInput,
+          monthlyWage,
+          basicSalary
+        );
 
-        await prisma.salaryComponent.update({
+        await tx.salaryComponent.update({
           where: { id: component.id },
           data: { calculatedAmount: newAmount },
         });
@@ -477,9 +587,6 @@ export class SalaryService {
         monthlyWage,
         componentsCount: employee.salaryComponents.length,
       });
-    } catch (error) {
-      logger.error('Error recalculating salary components', { employeeId, error });
-      throw error;
-    }
+    }, 'recalculateComponents');
   }
 }
