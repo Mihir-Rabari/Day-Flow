@@ -2,6 +2,7 @@
 
 import { MockDataStore } from '../types';
 import { mockData } from './mockData';
+import { User, AttendanceRecord, LeaveRequest, LeaveBalance } from '../../types';
 
 const STORAGE_KEY = 'dayflow-mock-data';
 const TOKEN_STORAGE_KEY = 'dayflow-auth-tokens';
@@ -32,7 +33,7 @@ export class MockStorage {
         
         if (tokenData) {
           const tokenEntries = JSON.parse(tokenData);
-          tokenEntries.forEach(([key, value]: [string, any]) => {
+          tokenEntries.forEach(([key, value]: [string, { user: User; expiresAt: number }]) => {
             authTokens.set(key, value);
           });
         }
@@ -86,7 +87,7 @@ export class MockStorage {
     return this.data.users.find(user => user.email === email);
   }
 
-  updateUser(id: string, updates: any) {
+  updateUser(id: string, updates: Partial<User>) {
     const userIndex = this.data.users.findIndex(user => user.id === id);
     if (userIndex !== -1) {
       this.data.users[userIndex] = { ...this.data.users[userIndex], ...updates };
@@ -96,7 +97,7 @@ export class MockStorage {
     return null;
   }
 
-  addUser(user: any) {
+  addUser(user: User) {
     this.data.users.push(user);
     this.saveToStorage();
     return user;
@@ -125,13 +126,13 @@ export class MockStorage {
     return records;
   }
 
-  addAttendanceRecord(record: any) {
+  addAttendanceRecord(record: AttendanceRecord) {
     this.data.attendanceRecords.push(record);
     this.saveToStorage();
     return record;
   }
 
-  updateAttendanceRecord(id: string, updates: any) {
+  updateAttendanceRecord(id: string, updates: Partial<AttendanceRecord>) {
     const recordIndex = this.data.attendanceRecords.findIndex(record => record.id === id);
     if (recordIndex !== -1) {
       this.data.attendanceRecords[recordIndex] = { ...this.data.attendanceRecords[recordIndex], ...updates };
@@ -153,13 +154,13 @@ export class MockStorage {
     return this.data.leaveBalances.find(balance => balance.employeeId === employeeId);
   }
 
-  addLeaveRequest(request: any) {
+  addLeaveRequest(request: LeaveRequest) {
     this.data.leaveRequests.push(request);
     this.saveToStorage();
     return request;
   }
 
-  updateLeaveRequest(id: string, updates: any) {
+  updateLeaveRequest(id: string, updates: Partial<LeaveRequest>) {
     const requestIndex = this.data.leaveRequests.findIndex(request => request.id === id);
     if (requestIndex !== -1) {
       this.data.leaveRequests[requestIndex] = { ...this.data.leaveRequests[requestIndex], ...updates };
@@ -169,7 +170,7 @@ export class MockStorage {
     return null;
   }
 
-  updateLeaveBalance(employeeId: string, updates: any) {
+  updateLeaveBalance(employeeId: string, updates: Partial<LeaveBalance>) {
     const balanceIndex = this.data.leaveBalances.findIndex(balance => balance.employeeId === employeeId);
     if (balanceIndex !== -1) {
       this.data.leaveBalances[balanceIndex] = { ...this.data.leaveBalances[balanceIndex], ...updates };
@@ -180,7 +181,7 @@ export class MockStorage {
   }
 
   // Auth token methods
-  setAuthToken(token: string, userData: any) {
+  setAuthToken(token: string, userData: { user: User; expiresAt: number }) {
     this.data.authTokens.set(token, userData);
     this.saveToStorage();
   }

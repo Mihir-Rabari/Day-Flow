@@ -111,7 +111,7 @@ export class ProductionApiClient implements ApiClient {
   private async request<T>(
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
     url: string,
-    data?: any,
+    data?: unknown,
     options?: ApiRequestOptions
   ): Promise<T> {
     const config: AxiosRequestConfig = {

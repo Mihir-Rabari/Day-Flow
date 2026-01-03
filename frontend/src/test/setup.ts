@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 
 // Mock IntersectionObserver
-(globalThis as any).IntersectionObserver = class IntersectionObserver {
+(globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = class IntersectionObserver {
   constructor() {}
   disconnect() {}
   observe() {}
@@ -9,7 +9,7 @@ import '@testing-library/jest-dom';
 };
 
 // Mock ResizeObserver
-(globalThis as any).ResizeObserver = class ResizeObserver {
+(globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = class ResizeObserver {
   constructor() {}
   disconnect() {}
   observe() {}
