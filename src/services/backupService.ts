@@ -57,7 +57,7 @@ export class BackupService {
         '--no-owner',
         '--no-privileges',
         '--format=custom',
-        `--file=${backupPath}`,
+        `--file="${backupPath}"`,
       ].join(' ');
 
       // Set password environment variable
@@ -108,11 +108,14 @@ export class BackupService {
     targetDatabase?: string
   ): Promise<void> {
     try {
+      // Validate and resolve backup path
+      const safeBackupPath = this.resolveSafePath(backupPath);
+
       // Verify backup file exists
-      await fs.access(backupPath);
+      await fs.access(safeBackupPath);
 
       logger.info('Starting database restore', {
-        backupPath,
+        backupPath: safeBackupPath,
         targetDatabase,
       });
 
@@ -136,7 +139,7 @@ export class BackupService {
         '--if-exists',
         '--no-owner',
         '--no-privileges',
-        backupPath,
+        `"${safeBackupPath}"`,
       ].join(' ');
 
       // Set password environment variable
@@ -147,13 +150,13 @@ export class BackupService {
 
       if (stderr && !stderr.includes('NOTICE')) {
         logger.warn('Restore completed with warnings', {
-          backupPath,
+          backupPath: safeBackupPath,
           warnings: stderr,
         });
       }
 
       logger.info('Database restore completed successfully', {
-        backupPath,
+        backupPath: safeBackupPath,
         targetDatabase: dbName,
       });
     } catch (error) {
@@ -242,20 +245,17 @@ export class BackupService {
    */
   static async deleteBackup(filename: string): Promise<void> {
     try {
-      const backupPath = path.join(this.BACKUP_DIR, filename);
+      // Validate and resolve backup path
+      const safeBackupPath = this.resolveSafePath(filename);
 
-      // Verify file exists and is in backup directory
-      await fs.access(backupPath);
+      // Verify file exists
+      await fs.access(safeBackupPath);
 
-      if (!backupPath.startsWith(path.resolve(this.BACKUP_DIR))) {
-        throw new Error('Invalid backup file path');
-      }
-
-      await fs.unlink(backupPath);
+      await fs.unlink(safeBackupPath);
 
       logger.info('Backup file deleted', {
         filename,
-        backupPath,
+        backupPath: safeBackupPath,
       });
     } catch (error) {
       logger.error('Failed to delete backup', {
@@ -322,11 +322,14 @@ export class BackupService {
    */
   static async verifyBackup(backupPath: string): Promise<boolean> {
     try {
+      // Validate and resolve backup path
+      const safeBackupPath = this.resolveSafePath(backupPath);
+
       // Check if file exists and is readable
-      await fs.access(backupPath, fs.constants.R_OK);
+      await fs.access(safeBackupPath, fs.constants.R_OK);
 
       // Check file size
-      const stats = await fs.stat(backupPath);
+      const stats = await fs.stat(safeBackupPath);
       if (stats.size === 0) {
         logger.error('Backup verification failed: file is empty', {
           backupPath,
@@ -338,7 +341,7 @@ export class BackupService {
       const dbUrl = new URL(config.database.url);
       const password = dbUrl.password;
 
-      const listCommand = `pg_restore --list ${backupPath}`;
+      const listCommand = `pg_restore --list "${safeBackupPath}"`;
       const env = { ...process.env, PGPASSWORD: password };
 
       try {
@@ -357,21 +360,21 @@ export class BackupService {
 
         if (!hasAllTables) {
           logger.error('Backup verification failed: missing expected tables', {
-            backupPath,
+            backupPath: safeBackupPath,
             expectedTables,
           });
           return false;
         }
 
         logger.info('Backup verification successful', {
-          backupPath,
+          backupPath: safeBackupPath,
           size: `${(stats.size / 1024 / 1024).toFixed(2)} MB`,
         });
 
         return true;
       } catch (listError) {
         logger.error('Backup verification failed: cannot list contents', {
-          backupPath,
+          backupPath: safeBackupPath,
           error:
             listError instanceof Error ? listError.message : 'Unknown error',
         });
@@ -479,6 +482,23 @@ export class BackupService {
       });
       return 'unknown';
     }
+  }
+
+  /**
+   * Resolve and validate a backup path to prevent traversal attacks
+   */
+  private static resolveSafePath(filePath: string): string {
+    const resolvedBackupDir = path.resolve(this.BACKUP_DIR);
+    const resolvedPath = path.resolve(
+      path.isAbsolute(filePath) ? filePath : path.join(this.BACKUP_DIR, filePath)
+    );
+
+    const relative = path.relative(resolvedBackupDir, resolvedPath);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+      throw new Error('Invalid backup file path');
+    }
+
+    return resolvedPath;
   }
 
   /**
